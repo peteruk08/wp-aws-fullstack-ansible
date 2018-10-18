@@ -22,6 +22,3 @@
 - name: Set RDS endpoint as a fact
   set_fact:
     rds_wp_endpoint: "{{ rds_wp.instance.endpoint }}"
-
-- name: Test
-  debug: var=rds_wp.instance.endpoint

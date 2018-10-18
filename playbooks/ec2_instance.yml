@@ -44,9 +44,6 @@
         delete_on_terimation: true
   register: ec2_nginx
 
-- name: Test
-  debug: var=ec2_nginx
-
 - name: Wait for instances to come up
   wait_for:
     port: 22
@@ -56,9 +53,6 @@
     sleep: 1
     timeout: 600
   with_items: "{{ ec2_varnish.tagged_instances }} + {{ ec2_nginx.tagged_instances }}"
-
-- name: Test
-  debug: var=ec2_varnish
 
 - name: "Add Varnish instance to dynamic host inventory"
   add_host:

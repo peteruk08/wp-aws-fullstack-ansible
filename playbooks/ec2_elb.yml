@@ -68,6 +68,3 @@
 - name: Set nginx ELB endpoint as a fact
   set_fact:
     nginx_elb_endpoint: "{{ elb_nginx.elb.dns_name }}"
-
-- name: "Test"
-  debug: var=elb_nginx
