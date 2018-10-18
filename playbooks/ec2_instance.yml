@@ -18,7 +18,7 @@
       - device_name: /dev/sda1
         volume_type: gp2
         volume_size: 8
-        delete_on_terimation: true
+        delete_on_termination: true
   register: ec2_varnish
 
 - name: Provision nginx EC2 instance
@@ -41,7 +41,7 @@
       - device_name: /dev/sda1
         volume_type: gp2
         volume_size: 8
-        delete_on_terimation: true
+        delete_on_termination: true
   register: ec2_nginx
 
 - name: Wait for instances to come up
