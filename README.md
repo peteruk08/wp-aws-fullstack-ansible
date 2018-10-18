@@ -19,7 +19,7 @@ aws_secret_access_key = ACCESS_SECRET_HERE
 aws_access_key_id = ACCESS_KEY_HERE
 ```
 
-You will need to have a keypair already uploaded to EC2 in your desired region.  You will also need to make sure you have created an [RDS Subnet Group](https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/USER_VPC.WorkingWithRDSInstanceinaVPC.html#USER_VPC.CreateDBSubnetGroup) and that you know the name of it.
+You will need to have a keypair already uploaded to EC2 in your desired region. It's important that your private key associated with this keypair is also loaded into your SSH agent or is the default so you will be prompted for password. You will also need to make sure you have created an [RDS Subnet Group](https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/USER_VPC.WorkingWithRDSInstanceinaVPC.html#USER_VPC.CreateDBSubnetGroup) and that you know the name of it.
 
 The following instructions are correct for running from an Ubuntu 18.04 machine as the Ansible initiator.
 ```
