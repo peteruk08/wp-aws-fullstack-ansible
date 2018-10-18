@@ -1,0 +1,47 @@
+- name: Add Varnish repo key
+  apt_key:
+    url: https://packagecloud.io/varnishcache/varnish60/gpgkey
+    state: present
+
+- name: Add Varnish repository
+  copy:
+    content: |
+      deb https://packagecloud.io/varnishcache/varnish60/ubuntu/ bionic main
+      deb-src https://packagecloud.io/varnishcache/varnish60/ubuntu/ bionic main
+    dest: /etc/apt/sources.list.d/varnish.list
+    owner: root
+    group: root
+    mode: 0644
+
+- name: Install Varnish
+  apt:
+    name:
+      - nginx
+      - varnish
+    state: present
+    update_cache: yes
+  notify: Restart Varnish
+
+- name: Configure Varnish
+  copy:
+    src: files/default.vcl
+    dest: /etc/varnish/default.vcl
+    owner: root
+    group: root
+    mode: 0755
+  notify: Restart Varnish
+
+- name: Delete default nginx config
+  file:
+    path: /etc/nginx/conf.d/default.conf
+    state: absent
+  notify: Restart nginx
+
+- name: Configure nginx for proxying
+  template:
+    src: templates/proxy_nginx.conf.j2
+    dest: /etc/nginx/conf.d/proxy_nginx.conf
+    owner: root
+    group: root
+    mode: 0755
+  notify: Restart nginx

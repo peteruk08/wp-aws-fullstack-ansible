@@ -1,0 +1,11 @@
+---
+- name: Restart nginx
+  service: name=nginx state=restarted
+  listen: Restart web stack
+
+- name: Restart php-fpm
+  service: name=php7.2-fpm state=restarted
+  listen: Restart web stack
+
+- name: Restart Varnish
+  service: name=varnish state=restarted

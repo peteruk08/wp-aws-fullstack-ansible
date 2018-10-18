@@ -1,0 +1,101 @@
+- name: Create security group for SSH access to instances
+  ec2_group:
+    name: "{{ aws_unique_tag }}-instance-ssh"
+    description: "{{ aws_unique_tag }} SSH instance access"
+    region: "{{ aws_region }}"
+    rules:
+      - proto: tcp
+        from_port: 22
+        to_port: 22
+        cidr_ip: "{{ public_ip.ansible_facts.ipify_public_ip }}/32"
+    rules_egress:
+      - proto: all
+        cidr_ip: 0.0.0.0/0
+    tags:
+      ansible_identifier: "{{ aws_unique_tag }}"
+  register: aws_sg_instance_ssh
+
+- name: Create security group allowing access to the load balancer in front of Varnish
+  ec2_group:
+    name: "{{ aws_unique_tag }}-elb-varnish"
+    description: "{{ aws_unique_tag }} public facing ELB access"
+    region: "{{ aws_region }}"
+    rules:
+      - proto: tcp
+        from_port: 80
+        to_port: 80
+        cidr_ip: "{{ public_ip.ansible_facts.ipify_public_ip }}/32"
+    rules_egress:
+      - proto: all
+        cidr_ip: 0.0.0.0/0
+    tags:
+      ansible_identifier: "{{ aws_unique_tag }}"
+  register: aws_sg_elb_varnish
+
+- name: Create security group allowing access to Varnish instance from ELB
+  ec2_group:
+    name: "{{ aws_unique_tag }}-instance-varnish"
+    description: "{{ aws_unique_tag }} Varnish instance access"
+    region: "{{ aws_region }}"
+    rules:
+      - proto: tcp
+        from_port: 6081
+        to_port: 6081
+        group_id: "{{ aws_sg_elb_varnish.group_id }}"
+    rules_egress:
+      - proto: all
+        cidr_ip: 0.0.0.0/0
+    tags:
+      ansible_identifier: "{{ aws_unique_tag }}"
+  register: aws_sg_instance_varnish
+
+- name: Create security group allowing access to nginx ELB from instances in Varnish SG
+  ec2_group:
+    name: "{{ aws_unique_tag }}-elb-nginx"
+    description: "{{ aws_unique_tag }} nginx ELB access"
+    region: "{{ aws_region }}"
+    rules:
+      - proto: tcp
+        from_port: 80
+        to_port: 80
+        group_id: "{{ aws_sg_instance_varnish.group_id }}"
+    rules_egress:
+      - proto: all
+        cidr_ip: 0.0.0.0/0
+    tags:
+      ansible_identifier: "{{ aws_unique_tag }}"
+  register: aws_sg_elb_nginx
+
+- name: Create security group allowing access to nginx instance from ELB
+  ec2_group:
+    name: "{{ aws_unique_tag }}-instance-nginx"
+    description: "{{ aws_unique_tag }} nginx instance access"
+    region: "{{ aws_region }}"
+    rules:
+      - proto: tcp
+        from_port: 80
+        to_port: 80
+        group_id: "{{ aws_sg_elb_nginx.group_id }}"
+    rules_egress:
+      - proto: all
+        cidr_ip: 0.0.0.0/0
+    tags:
+      ansible_identifier: "{{ aws_unique_tag }}"
+  register: aws_sg_instance_nginx
+
+- name: Create security group allowing access to RDS from nginx EC2
+  ec2_group:
+    name: "{{ aws_unique_tag }}-rds"
+    description: "{{ aws_unique_tag }} RDS access"
+    region: "{{ aws_region }}"
+    rules:
+      - proto: tcp
+        from_port: 3306
+        to_port: 3306
+        group_id: "{{ aws_sg_instance_nginx.group_id }}"
+    rules_egress:
+      - proto: all
+        cidr_ip: 0.0.0.0/0
+    tags:
+      ansible_identifier: "{{ aws_unique_tag }}"
+  register: aws_sg_rds

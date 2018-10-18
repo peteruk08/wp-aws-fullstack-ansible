@@ -1,0 +1,28 @@
+- name: Upgrade all packages
+  apt:
+    upgrade: dist
+    update_cache: yes
+    autoremove: yes
+
+- name: Check for reboot file in Ubuntu
+  stat: path=/var/run/reboot-required
+  register: ubuntu_reboot_flag
+
+- name: Reboot if required
+  reboot:
+  when: ubuntu_reboot_flag.stat.exists == true
+
+- name: Add nginx.org repo key
+  apt_key:
+    url: http://nginx.org/keys/nginx_signing.key
+    state: present
+
+- name: Add nginx.org repository
+  copy:
+    content: |
+      deb http://nginx.org/packages/mainline/ubuntu/ bionic nginx
+      deb-src http://nginx.org/packages/mainline/ubuntu/ bionic nginx
+    dest: /etc/apt/sources.list.d/nginx.list
+    owner: root
+    group: root
+    mode: 0644

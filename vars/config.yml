@@ -1,0 +1,23 @@
+# General AWS configuration
+aws_keypair: peter
+aws_region: eu-west-2
+# A unique tag to terminate these resources later, we could generate one at runtime if we wanted
+aws_unique_tag: wp-fullstack-aws-ansible-12345
+
+# Configuration for nginx/php instance
+web_aws_instance_type: t2.nano
+web_aws_instance_ami: ami-0b0a60c0a2bd40612
+web_aws_instance_username: ubuntu
+web_aws_instance_subnet: subnet-c18a69ba
+web_aws_elb_name: wordpress-backend-ansible
+
+# Configuration for Varnish instance
+cache_aws_instance_type: t2.nano
+cache_aws_instance_ami: ami-0b0a60c0a2bd40612
+cache_aws_instance_username: ubuntu
+cache_aws_instance_subnet: subnet-c18a69ba
+cache_aws_elb_name: wordpress-ansible
+
+# Configuration for RDS instance
+rds_aws_instance_type: db.t2.micro
+rds_aws_subnet: default

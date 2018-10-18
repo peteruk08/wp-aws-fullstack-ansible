@@ -1,0 +1,73 @@
+- name: Provision Varnish ELB
+  ec2_elb_lb:
+    name: "{{ cache_aws_elb_name }}"
+    state: present
+    subnets: "{{ cache_aws_instance_subnet }}"
+    region: "{{ aws_region }}"
+    listeners:
+      - protocol: http
+        load_balancer_port: 80
+        instance_port: 6081
+    health_check:
+      ping_protocol: tcp
+      ping_port: 6081
+      response_timeout: 4
+      interval: 5
+      unhealthy_threshold: 2
+      healthy_threshold: 2
+    security_group_ids: "{{ aws_sg_elb_varnish.group_id }}"
+    tags:
+      ansible_identifier: "{{ aws_unique_tag }}"
+  register: elb_varnish
+
+- name: Provision nginx ELB
+  ec2_elb_lb:
+    name: "{{ web_aws_elb_name }}"
+    state: present
+    subnets: "{{ cache_aws_instance_subnet }}"
+    region: "{{ aws_region }}"
+    listeners:
+      - protocol: http
+        load_balancer_port: 80
+        instance_port: 80
+    health_check:
+      ping_protocol: tcp
+      ping_port: 80
+      response_timeout: 4
+      interval: 5
+      unhealthy_threshold: 2
+      healthy_threshold: 2
+    scheme: internal
+    security_group_ids: "{{ aws_sg_elb_nginx.group_id }}"
+    tags:
+      ansible_identifier: "{{ aws_unique_tag }}"
+  register: elb_nginx
+
+- name: Add Varnish instance to ELB
+  ec2_elb:
+    instance_id: "{{ item.id }}"
+    ec2_elbs: "{{ cache_aws_elb_name }}"
+    state: present
+    region: "{{ aws_region }}"
+    wait: no
+  with_items: "{{ ec2_varnish.tagged_instances }}"
+
+- name: Add nginx instance to ELB
+  ec2_elb:
+    instance_id: "{{ item.id }}"
+    ec2_elbs: "{{ web_aws_elb_name }}"
+    state: present
+    region: "{{ aws_region }}"
+    wait: no
+  with_items: "{{ ec2_nginx.tagged_instances }}"
+
+- name: Set Varnish ELB endpoint as a fact
+  set_fact:
+    varnish_elb_endpoint: "{{ elb_varnish.elb.dns_name }}"
+
+- name: Set nginx ELB endpoint as a fact
+  set_fact:
+    nginx_elb_endpoint: "{{ elb_nginx.elb.dns_name }}"
+
+- name: "Test"
+  debug: var=elb_nginx

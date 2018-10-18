@@ -1,0 +1,77 @@
+- name: Provision Varnish EC2 instance
+  ec2:
+    key_name: "{{ aws_keypair }}"
+    group_id:
+      - "{{ aws_sg_instance_varnish.group_id }}"
+      - "{{ aws_sg_instance_ssh.group_id }}"
+    instance_type: "{{ cache_aws_instance_type }}"
+    image: "{{ cache_aws_instance_ami }}"
+    vpc_subnet_id: "{{ cache_aws_instance_subnet }}"
+    region: "{{ aws_region }}"
+    instance_tags: '{"Name": "{{ aws_unique_tag }}-varnish", "ansible_identifier": "{{ aws_unique_tag }}"}'
+    assign_public_ip: yes
+    wait: true
+    exact_count: 1
+    count_tag:
+      Name: "{{ aws_unique_tag }}-varnish"
+    volumes:
+      - device_name: /dev/sda1
+        volume_type: gp2
+        volume_size: 8
+        delete_on_terimation: true
+  register: ec2_varnish
+
+- name: Provision nginx EC2 instance
+  ec2:
+    key_name: "{{ aws_keypair }}"
+    group_id:
+      - "{{ aws_sg_instance_nginx.group_id }}"
+      - "{{ aws_sg_instance_ssh.group_id }}"
+    instance_type: "{{ web_aws_instance_type }}"
+    image: "{{ web_aws_instance_ami }}"
+    vpc_subnet_id: "{{ web_aws_instance_subnet }}"
+    region: "{{ aws_region }}"
+    instance_tags: '{"Name": "{{ aws_unique_tag }}-nginx", "ansible_identifier": "{{ aws_unique_tag }}"}'
+    assign_public_ip: yes
+    wait: true
+    exact_count: 1
+    count_tag:
+      Name: "{{ aws_unique_tag }}-nginx"
+    volumes:
+      - device_name: /dev/sda1
+        volume_type: gp2
+        volume_size: 8
+        delete_on_terimation: true
+  register: ec2_nginx
+
+- name: Test
+  debug: var=ec2_nginx
+
+- name: Wait for instances to come up
+  wait_for:
+    port: 22
+    host: "{{ item.public_ip }}"
+    search_regex: OpenSSH
+    delay: 0
+    sleep: 1
+    timeout: 600
+  with_items: "{{ ec2_varnish.tagged_instances }} + {{ ec2_nginx.tagged_instances }}"
+
+- name: Test
+  debug: var=ec2_varnish
+
+- name: "Add Varnish instance to dynamic host inventory"
+  add_host:
+    name: "{{ item.public_ip }}"
+    ansible_user: ubuntu
+    groups: ec2_varnish
+    ansible_python_interpreter: /usr/bin/python3
+  with_items: "{{ ec2_varnish.tagged_instances }}"
+
+- name: "Add nginx instance to dynamic host inventory"
+  add_host:
+    name: "{{ item.public_ip }}"
+    ansible_user: ubuntu
+    groups: ec2_nginx
+    ansible_python_interpreter: /usr/bin/python3
+  with_items: "{{ ec2_nginx.tagged_instances }}"

@@ -1,0 +1,62 @@
+---
+- name: Destroy AWS resources
+  hosts: local
+  connection: local
+  gather_facts: false
+  vars_files:
+    - vars/config.yml
+  tasks:
+    - name: Destroy ELBs
+      ec2_elb_lb:
+        name: "{{ item }}"
+        state: absent
+        region: "{{ aws_region }}"
+        wait: yes
+      with_items:
+        - "{{ cache_aws_elb_name }}"
+        - "{{ web_aws_elb_name }}"
+
+    - name: Get EC2 instance information
+      ec2_instance_facts:
+        region: "{{ aws_region }}"
+        filters:
+          "tag:ansible_identifier": "{{ aws_unique_tag }}"
+      register: ec2_to_destroy
+
+    - name: Destroy EC2 instances
+      ec2:
+        state: absent
+        region: "{{ aws_region }}"
+        instance_ids: "{{ item.instance_id }}"
+        wait: yes
+      with_items: "{{ ec2_to_destroy.instances }}"
+
+    - name: Destroy RDS instance
+      rds:
+        command: delete
+        region: "{{ aws_region }}"
+        instance_name: "{{ aws_unique_tag }}"
+        wait: yes
+
+    - name: Get SG information
+      ec2_group_facts:
+        region: "{{ aws_region }}"
+        filters:
+          "tag:ansible_identifier": "{{ aws_unique_tag }}"
+      register: sg_to_destroy
+
+    - name: Update all Security Group rules to be blank to enable easier deletion
+      ec2_group:
+        region: "{{ aws_region }}"
+        name: "{{ item.group_name }}"
+        description: "{{ item.description }}"
+        rules:
+        rules_egress:
+      with_items: "{{ sg_to_destroy.security_groups }}"
+
+    - name: Destroy Security Groups
+      ec2_group:
+        region: "{{ aws_region }}"
+        group_id: "{{ item.group_id }}"
+        state: absent
+      with_items: "{{ sg_to_destroy.security_groups }}"

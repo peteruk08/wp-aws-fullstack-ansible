@@ -1,0 +1,27 @@
+- name: Provision RDS instance
+  rds:
+    command: create
+    db_engine: MySQL
+    db_name: "{{ rds_db_name }}"
+    instance_name: "{{ aws_unique_tag }}"
+    instance_type: "{{ rds_aws_instance_type }}"
+    multi_zone: no
+    password: "{{ rds_password }}"
+    publicly_accessible: no
+    region: "{{ aws_region }}"
+    size: 20
+    subnet: "{{ rds_aws_subnet }}"
+    tags:
+      ansible_identifier: "{{ aws_unique_tag }}"
+    username: "{{ rds_username }}"
+    vpc_security_groups: "{{ aws_sg_rds.group_id }}"
+    wait: yes
+    wait_timeout: 900
+  register: rds_wp
+
+- name: Set RDS endpoint as a fact
+  set_fact:
+    rds_wp_endpoint: "{{ rds_wp.instance.endpoint }}"
+
+- name: Test
+  debug: var=rds_wp.instance.endpoint

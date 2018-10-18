@@ -1,0 +1,55 @@
+---
+- name: Configure AWS resources
+  hosts: local
+  connection: local
+  gather_facts: false
+  vars_files:
+    - vars/config.yml
+    - vars/secrets.yml
+  tasks:
+    - name: Get current public IPv4 of local machine
+      ipify_facts:
+      register: public_ip
+
+    - include: playbooks/ec2_sg.yml
+    - include: playbooks/ec2_instance.yml
+    - include: playbooks/rds.yml
+    - include: playbooks/ec2_elb.yml
+
+- name: Configure nginx AWS instance(s)
+  hosts: ec2_nginx
+  connection: ssh
+  become: yes
+  become_method: sudo
+  gather_facts: false
+  vars_files:
+    - vars/config.yml
+    - vars/secrets.yml
+  handlers:
+    - include: handlers/handlers.yml
+  tasks:
+    - include: playbooks/ec2_config_shared.yml
+    - include: playbooks/ec2_config_nginx_instance.yml
+
+- name: Configure Varnish AWS instance(s)
+  hosts: ec2_varnish
+  connection: ssh
+  become: yes
+  become_method: sudo
+  gather_facts: false
+  vars_files:
+    - vars/config.yml
+    - vars/secrets.yml
+  handlers:
+    - include: handlers/handlers.yml
+  tasks:
+    - include: playbooks/ec2_config_shared.yml
+    - include: playbooks/ec2_config_varnish_instance.yml
+
+- name: Display information
+  hosts: local
+  connection: local
+  gather_facts: false
+  tasks:
+    - debug:
+        msg: "WordPress should now be available at http://{{ varnish_elb_endpoint }} from this host."
