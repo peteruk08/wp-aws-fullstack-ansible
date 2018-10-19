@@ -52,3 +52,5 @@ ansible-playbook -i local_inventory destroy.yml
 While instances are launched behind ELBs they are not in ASGs nor are they scalable even if they were. The cache tier would be scalable once an AMI was made, although the actual cached data would not be shared among members of the pool.
 
 The web tier is not stateless but could be made so quickly by using something like an EFS mount on the instances.
+
+There is also currently no way to purge cache items from the Varnish cache, as neither the WordPress plugin necessary is installed, nor is the whitelisting setup correctly to allow it.
